@@ -1,5 +1,5 @@
 blueprint:
-  name: "🌿 Plant Care Monitoring"
+  name: "🌿 Plant Care Monitoring (with Soil Moisture)"
   description: "Monitor plant health and send notifications if conditions go out of range."
   domain: automation
   input:
@@ -120,6 +120,35 @@ blueprint:
           max: 10.0
           step: 0.1
 
+    soil_moisture_sensor:
+      name: "Soil Moisture Sensor"
+      description: "Select the soil moisture sensor (leave empty if not used)."
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+
+    soil_moisture_min:
+      name: "Minimum Soil Moisture (%)"
+      description: "Lowest ideal moisture level (adjust based on plant type)."
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+
+    soil_moisture_max:
+      name: "Maximum Soil Moisture (%)"
+      description: "Highest ideal moisture level (adjust based on plant type)."
+      default: 80
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+
     notify_device:
       name: "Notification Device"
       description: "Select a device to receive alerts."
@@ -163,6 +192,14 @@ trigger:
     entity_id: !input soil_ph_sensor
     above: !input soil_ph_max
     enabled: "{{ soil_ph_sensor != '' }}"
+  - platform: numeric_state
+    entity_id: !input soil_moisture_sensor
+    below: !input soil_moisture_min
+    enabled: "{{ soil_moisture_sensor != '' }}"
+  - platform: numeric_state
+    entity_id: !input soil_moisture_sensor
+    above: !input soil_moisture_max
+    enabled: "{{ soil_moisture_sensor != '' }}"
 
 action:
   - service: notify.mobile_app_{{ notify_device }}
@@ -177,6 +214,8 @@ action:
           Humidity levels are outside the ideal range ({{ trigger.to_state.state }}%).
         {% elif trigger.entity_id == soil_ph_sensor %}
           Soil pH is outside the ideal range ({{ trigger.to_state.state }}).
+        {% elif trigger.entity_id == soil_moisture_sensor %}
+          Soil moisture is outside the ideal range ({{ trigger.to_state.state }}%).
         {% endif %}
       data:
         clickAction: /lovelace/0
