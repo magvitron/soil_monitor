@@ -18,6 +18,8 @@ blueprint:
           domain: sensor
           device_class: illuminance
           multiple: false
+          filter:
+            - enabled: true
 
     lumens_min:
       name: "Minimum Lumens"
@@ -46,6 +48,8 @@ blueprint:
           domain: sensor
           device_class: temperature
           multiple: false
+          filter:
+            - enabled: true
 
     soil_temp_min:
       name: "Minimum Soil Temperature (°C)"
@@ -74,6 +78,8 @@ blueprint:
           domain: sensor
           device_class: humidity
           multiple: false
+          filter:
+            - enabled: true
 
     humidity_min:
       name: "Minimum Humidity (%)"
@@ -101,6 +107,8 @@ blueprint:
         entity:
           domain: sensor
           multiple: false
+          filter:
+            - enabled: true
 
     soil_ph_min:
       name: "Minimum Soil pH"
@@ -128,10 +136,11 @@ blueprint:
         entity:
           domain: sensor
           multiple: false
+          filter:
+            - enabled: true
 
     soil_moisture_min:
       name: "Minimum Soil Moisture (%)"
-      description: "Lowest ideal moisture level (adjust based on plant type)."
       default: 30
       selector:
         number:
@@ -141,7 +150,6 @@ blueprint:
 
     soil_moisture_max:
       name: "Maximum Soil Moisture (%)"
-      description: "Highest ideal moisture level (adjust based on plant type)."
       default: 80
       selector:
         number:
@@ -160,46 +168,26 @@ blueprint:
 mode: parallel
 
 trigger:
-  - platform: numeric_state
-    entity_id: !input lumens_sensor
-    below: !input lumens_min
-    enabled: "{{ lumens_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input lumens_sensor
-    above: !input lumens_max
-    enabled: "{{ lumens_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input soil_temp_sensor
-    below: !input soil_temp_min
-    enabled: "{{ soil_temp_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input soil_temp_sensor
-    above: !input soil_temp_max
-    enabled: "{{ soil_temp_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input humidity_sensor
-    below: !input humidity_min
-    enabled: "{{ humidity_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input humidity_sensor
-    above: !input humidity_max
-    enabled: "{{ humidity_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input soil_ph_sensor
-    below: !input soil_ph_min
-    enabled: "{{ soil_ph_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input soil_ph_sensor
-    above: !input soil_ph_max
-    enabled: "{{ soil_ph_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input soil_moisture_sensor
-    below: !input soil_moisture_min
-    enabled: "{{ soil_moisture_sensor != '' }}"
-  - platform: numeric_state
-    entity_id: !input soil_moisture_sensor
-    above: !input soil_moisture_max
-    enabled: "{{ soil_moisture_sensor != '' }}"
+  - platform: template
+    value_template: "{{ lumens_sensor != '' and states(lumens_sensor) | float < lumens_min }}"
+  - platform: template
+    value_template: "{{ lumens_sensor != '' and states(lumens_sensor) | float > lumens_max }}"
+  - platform: template
+    value_template: "{{ soil_temp_sensor != '' and states(soil_temp_sensor) | float < soil_temp_min }}"
+  - platform: template
+    value_template: "{{ soil_temp_sensor != '' and states(soil_temp_sensor) | float > soil_temp_max }}"
+  - platform: template
+    value_template: "{{ humidity_sensor != '' and states(humidity_sensor) | float < humidity_min }}"
+  - platform: template
+    value_template: "{{ humidity_sensor != '' and states(humidity_sensor) | float > humidity_max }}"
+  - platform: template
+    value_template: "{{ soil_ph_sensor != '' and states(soil_ph_sensor) | float < soil_ph_min }}"
+  - platform: template
+    value_template: "{{ soil_ph_sensor != '' and states(soil_ph_sensor) | float > soil_ph_max }}"
+  - platform: template
+    value_template: "{{ soil_moisture_sensor != '' and states(soil_moisture_sensor) | float < soil_moisture_min }}"
+  - platform: template
+    value_template: "{{ soil_moisture_sensor != '' and states(soil_moisture_sensor) | float > soil_moisture_max }}"
 
 action:
   - service: notify.mobile_app_{{ notify_device }}
@@ -207,15 +195,15 @@ action:
       title: "⚠️ Plant Care Alert: {{ plant_name }}"
       message: >
         {% if trigger.entity_id == lumens_sensor %}
-          Light levels are outside the ideal range ({{ trigger.to_state.state }} lx).
+          Light levels are outside the ideal range ({{ states(lumens_sensor) | float }} lx).
         {% elif trigger.entity_id == soil_temp_sensor %}
-          Soil temperature is outside the ideal range ({{ trigger.to_state.state }}°C).
+          Soil temperature is outside the ideal range ({{ states(soil_temp_sensor) | float }}°C).
         {% elif trigger.entity_id == humidity_sensor %}
-          Humidity levels are outside the ideal range ({{ trigger.to_state.state }}%).
+          Humidity levels are outside the ideal range ({{ states(humidity_sensor) | float }}%).
         {% elif trigger.entity_id == soil_ph_sensor %}
-          Soil pH is outside the ideal range ({{ trigger.to_state.state }}).
+          Soil pH is outside the ideal range ({{ states(soil_ph_sensor) | float }}).
         {% elif trigger.entity_id == soil_moisture_sensor %}
-          Soil moisture is outside the ideal range ({{ trigger.to_state.state }}%).
+          Soil moisture is outside the ideal range ({{ states(soil_moisture_sensor) | float }}%).
         {% endif %}
       data:
         clickAction: /lovelace/0
