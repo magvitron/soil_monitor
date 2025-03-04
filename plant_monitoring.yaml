@@ -11,13 +11,13 @@ blueprint:
 
     lumens_sensor:
       name: "Lumens Sensor"
-      description: "Select the sensor that measures light (leave blank if not available)."
+      description: "Select the sensor that measures light (leave empty if not used)."
+      default: ""
       selector:
         entity:
           domain: sensor
           device_class: illuminance
           multiple: false
-          include_entities: []
 
     lumens_min:
       name: "Minimum Lumens"
@@ -39,13 +39,13 @@ blueprint:
 
     soil_temp_sensor:
       name: "Soil Temperature Sensor"
-      description: "Select the soil temperature sensor (leave blank if not available)."
+      description: "Select the soil temperature sensor (leave empty if not used)."
+      default: ""
       selector:
         entity:
           domain: sensor
           device_class: temperature
           multiple: false
-          include_entities: []
 
     soil_temp_min:
       name: "Minimum Soil Temperature (°C)"
@@ -67,13 +67,13 @@ blueprint:
 
     humidity_sensor:
       name: "Humidity Sensor"
-      description: "Select the humidity sensor (leave blank if not available)."
+      description: "Select the humidity sensor (leave empty if not used)."
+      default: ""
       selector:
         entity:
           domain: sensor
           device_class: humidity
           multiple: false
-          include_entities: []
 
     humidity_min:
       name: "Minimum Humidity (%)"
@@ -95,12 +95,12 @@ blueprint:
 
     soil_ph_sensor:
       name: "Soil pH Sensor"
-      description: "Select the soil pH sensor (leave blank if not available)."
+      description: "Select the soil pH sensor (leave empty if not used)."
+      default: ""
       selector:
         entity:
           domain: sensor
           multiple: false
-          include_entities: []
 
     soil_ph_min:
       name: "Minimum Soil pH"
@@ -134,27 +134,35 @@ trigger:
   - platform: numeric_state
     entity_id: !input lumens_sensor
     below: !input lumens_min
+    enabled: "{{ lumens_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input lumens_sensor
     above: !input lumens_max
+    enabled: "{{ lumens_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input soil_temp_sensor
     below: !input soil_temp_min
+    enabled: "{{ soil_temp_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input soil_temp_sensor
     above: !input soil_temp_max
+    enabled: "{{ soil_temp_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input humidity_sensor
     below: !input humidity_min
+    enabled: "{{ humidity_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input humidity_sensor
     above: !input humidity_max
+    enabled: "{{ humidity_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input soil_ph_sensor
     below: !input soil_ph_min
+    enabled: "{{ soil_ph_sensor != '' }}"
   - platform: numeric_state
     entity_id: !input soil_ph_sensor
     above: !input soil_ph_max
+    enabled: "{{ soil_ph_sensor != '' }}"
 
 action:
   - service: notify.mobile_app_{{ notify_device }}
