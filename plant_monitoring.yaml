@@ -1,0 +1,169 @@
+blueprint:
+  name: "🌿 Plant Care Monitoring"
+  description: "Monitor plant health and send notifications if conditions go out of range."
+  domain: automation
+  input:
+    plant_name:
+      name: "Plant Name"
+      description: "Enter the name of your plant."
+      selector:
+        text:
+    lumens_sensor:
+      name: "Lumens Sensor"
+      description: "Select the sensor that measures light (optional)."
+      selector:
+        entity:
+          domain: sensor
+          device_class: illuminance
+          multiple: false
+          optional: true
+    lumens_min:
+      name: "Minimum Lumens"
+      description: "Lowest ideal lumens."
+      default: 2500
+      selector:
+        number:
+          min: 0
+          max: 20000
+          step: 100
+    lumens_max:
+      name: "Maximum Lumens"
+      description: "Highest ideal lumens."
+      default: 10000
+      selector:
+        number:
+          min: 0
+          max: 20000
+          step: 100
+    soil_temp_sensor:
+      name: "Soil Temperature Sensor"
+      description: "Select the soil temperature sensor (optional)."
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+          multiple: false
+          optional: true
+    soil_temp_min:
+      name: "Minimum Soil Temperature (°C)"
+      description: "Lowest ideal soil temperature."
+      default: 18
+      selector:
+        number:
+          min: 0
+          max: 50
+          step: 0.1
+    soil_temp_max:
+      name: "Maximum Soil Temperature (°C)"
+      description: "Highest ideal soil temperature."
+      default: 26
+      selector:
+        number:
+          min: 0
+          max: 50
+          step: 0.1
+    humidity_sensor:
+      name: "Humidity Sensor"
+      description: "Select the humidity sensor (optional)."
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+          multiple: false
+          optional: true
+    humidity_min:
+      name: "Minimum Humidity (%)"
+      description: "Lowest ideal humidity level."
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+    humidity_max:
+      name: "Maximum Humidity (%)"
+      description: "Highest ideal humidity level."
+      default: 60
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+    soil_ph_sensor:
+      name: "Soil pH Sensor"
+      description: "Select the soil pH sensor (optional)."
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+          optional: true
+    soil_ph_min:
+      name: "Minimum Soil pH"
+      description: "Lowest ideal pH level."
+      default: 5.8
+      selector:
+        number:
+          min: 3.0
+          max: 10.0
+          step: 0.1
+    soil_ph_max:
+      name: "Maximum Soil pH"
+      description: "Highest ideal pH level."
+      default: 6.5
+      selector:
+        number:
+          min: 3.0
+          max: 10.0
+          step: 0.1
+    notify_device:
+      name: "Notification Device"
+      description: "Select a device to receive alerts."
+      selector:
+        device:
+          integration: mobile_app
+          multiple: false
+
+mode: parallel
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input lumens_sensor
+    below: !input lumens_min
+  - platform: numeric_state
+    entity_id: !input lumens_sensor
+    above: !input lumens_max
+  - platform: numeric_state
+    entity_id: !input soil_temp_sensor
+    below: !input soil_temp_min
+  - platform: numeric_state
+    entity_id: !input soil_temp_sensor
+    above: !input soil_temp_max
+  - platform: numeric_state
+    entity_id: !input humidity_sensor
+    below: !input humidity_min
+  - platform: numeric_state
+    entity_id: !input humidity_sensor
+    above: !input humidity_max
+  - platform: numeric_state
+    entity_id: !input soil_ph_sensor
+    below: !input soil_ph_min
+  - platform: numeric_state
+    entity_id: !input soil_ph_sensor
+    above: !input soil_ph_max
+
+action:
+  - service: notify.mobile_app_{{ device_id }}
+    data:
+      title: "⚠️ Plant Care Alert: {{ input.plant_name }}"
+      message: >
+        {% if trigger.entity_id == lumens_sensor %}
+          Light levels are outside the ideal range ({{ trigger.to_state.state }} lx).
+        {% elif trigger.entity_id == soil_temp_sensor %}
+          Soil temperature is outside the ideal range ({{ trigger.to_state.state }}°C).
+        {% elif trigger.entity_id == humidity_sensor %}
+          Humidity levels are outside the ideal range ({{ trigger.to_state.state }}%).
+        {% elif trigger.entity_id == soil_ph_sensor %}
+          Soil pH is outside the ideal range ({{ trigger.to_state.state }}).
+        {% endif %}
+      data:
+        clickAction: /lovelace/0
